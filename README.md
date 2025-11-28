@@ -7,7 +7,7 @@ npm install
 # Run the WebApp
 npm run dev
 
-# Set tup the DataBase
+# Set up the Database
 1. Firebase Initialisation
 2. Connect the Firebase and Run
 
