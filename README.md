@@ -1,4 +1,4 @@
-# 🗳️ VoteHub
+# 🗳️ VoteHub - BARATH M
 
 **VoteHub** is a high-performance, secure, and modern digital democracy platform designed specifically for university election infrastructure. It provides a seamless, transparent, and immutable voting experience for students while offering comprehensive governance tools for administrators.
 
