@@ -4,7 +4,8 @@ import { useElections } from '@/context/ElectionContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit } from 'lucide-react';
+import { Trash2, Edit, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +17,7 @@ import {
 
 const ManageElections = () => {
   const navigate = useNavigate();
-  const { elections, deleteElection, updateElection } = useElections();
+  const { elections, deleteElection, updateElection, addElection } = useElections();
   const [deleteElectionId, setDeleteElectionId] = useState<string | null>(null);
 
   const handleDeleteElection = () => {
@@ -28,6 +29,33 @@ const ManageElections = () => {
 
   const handleStatusChange = (electionId: string, newStatus: 'scheduled' | 'active' | 'completed') => {
     updateElection(electionId, { status: newStatus });
+  };
+
+  const handleDuplicateElection = async (election: any) => {
+    try {
+      // Create a deep copy of the election object excluding the ID
+      const { id, _id, ...electionData } = election;
+
+      const newElection = {
+        ...electionData,
+        title: `${election.title} (Copy)`,
+        status: 'scheduled', // Always start as scheduled
+        candidates: election.candidates.map((c: any) => ({
+          ...c,
+          votes: 0 // Reset votes
+        })),
+        created_at: new Date().toISOString(),
+        start_time: new Date().toISOString(), // Reset start time to now
+        end_time: new Date(Date.now() + 86400000).toISOString(), // Default end time 24h from now
+        resultsPublished: false
+      };
+
+      await addElection(newElection);
+      toast.success('Election duplicated successfully');
+    } catch (error) {
+      console.error('Error duplicating election:', error);
+      toast.error('Failed to duplicate election');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -127,6 +155,16 @@ const ManageElections = () => {
                     className="aspect-square h-8 w-8 p-0 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
                   >
                     <Edit className="w-3.5 h-3.5" />
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDuplicateElection(election)}
+                    title="Duplicate Election"
+                    className="aspect-square h-8 w-8 p-0 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
                   </Button>
 
                   <Button
