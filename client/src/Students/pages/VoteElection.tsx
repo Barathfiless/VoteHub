@@ -36,8 +36,9 @@ const VoteElection = () => {
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [deviceType, setDeviceType] = useState<'mobile' | 'laptop' | null>(null);
-  const [showDeviceSelection, setShowDeviceSelection] = useState(false);
+  const [showDeviceSelection, setShowDeviceSelection] = useState(true);
   const [showSecurityAuth, setShowSecurityAuth] = useState(false);
+  const [securityVerified, setSecurityVerified] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [fingerprintSupported, setFingerprintSupported] = useState(false);
@@ -191,6 +192,7 @@ const VoteElection = () => {
       if (student) {
         setPasswordError(null);
         setShowSecurityAuth(false);
+        setSecurityVerified(true);
         toast.success('Authentication successful!');
       } else {
         setPasswordError('Invalid password. Please try again.');
@@ -250,6 +252,7 @@ const VoteElection = () => {
             setIsScanning(false);
             setFingerprintAuthenticated(true);
             setShowSecurityAuth(false);
+            setSecurityVerified(true);
             toast.success('Verified successfully!');
             return;
           }
@@ -298,6 +301,7 @@ const VoteElection = () => {
         setIsScanning(false);
         setFingerprintAuthenticated(true);
         setShowSecurityAuth(false);
+        setSecurityVerified(true);
         toast.success('Phone lock verified and linked!');
       }
     } catch (error: any) {
@@ -660,7 +664,7 @@ const VoteElection = () => {
               )}
 
               {/* Step 3: Candidate Selection (Final) */}
-              {!showDeviceSelection && !showSecurityAuth && (
+              {securityVerified && (
                 <>
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white">Select a Candidate</h2>
                   <div className="space-y-3">
