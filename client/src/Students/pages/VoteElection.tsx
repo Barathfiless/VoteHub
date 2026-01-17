@@ -196,6 +196,7 @@ const VoteElection = () => {
       const student = await loginStudent(user.rollNo, password);
       if (student) {
         setPasswordError(null);
+        stopCamera(); // Stop camera after successful auth
         setCurrentStep('voting');
         toast.success('Authentication successful!');
       } else {
@@ -255,6 +256,7 @@ const VoteElection = () => {
           if (assertion) {
             setIsScanning(false);
             setFingerprintAuthenticated(true);
+            stopCamera(); // Stop camera after successful auth
             setCurrentStep('voting');
             toast.success('Verified successfully!');
             return;
@@ -303,6 +305,7 @@ const VoteElection = () => {
 
         setIsScanning(false);
         setFingerprintAuthenticated(true);
+        stopCamera(); // Stop camera after successful auth
         setCurrentStep('voting');
         toast.success('Phone lock verified and linked!');
       }
@@ -396,7 +399,7 @@ const VoteElection = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Election Not Found</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Try Again</h2>
               <p className="text-gray-500 dark:text-gray-400">The election details could not be loaded. Please try again.</p>
             </div>
             <div className="flex flex-col gap-3">
@@ -519,6 +522,14 @@ const VoteElection = () => {
                   {cameraError ? (
                     <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
                       <p className="text-red-600 dark:text-red-400 font-semibold">{cameraError}</p>
+                    </div>
+                  ) : !cameraActive && currentStep === 'voting' ? (
+                    <div className="relative w-full aspect-[4/3] bg-gray-900 rounded-lg overflow-hidden flex flex-col items-center justify-center border border-gray-800">
+                      <div className="w-16 h-16 bg-green-900/30 rounded-full flex items-center justify-center mb-3">
+                        <CheckCircle2 className="w-8 h-8 text-green-500" />
+                      </div>
+                      <h3 className="text-white font-bold text-lg">Identity Verified</h3>
+                      <p className="text-gray-400 text-sm">Camera turned off</p>
                     </div>
                   ) : (
                     <div className="relative w-full aspect-[4/3] bg-black rounded-lg overflow-hidden flex items-center justify-center">

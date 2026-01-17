@@ -1,15 +1,15 @@
-# 🗳️ VoteHub - BARATH M
+# VoteHub - BARATH M
 
 **VoteHub** is a high-performance, secure, and modern digital democracy platform designed specifically for university election infrastructure. It provides a seamless, transparent, and immutable voting experience for students while offering comprehensive governance tools for administrators.
 
 ---
 
-## 🚀 Vision
+## Vision
 To digitize and secure university governance through state-of-the-art cryptographic standards, real-time analytics, and a premium user experience.
 
 ---
 
-## 🏗️ Project Architecture & Workflow
+## Project Architecture & Workflow
 
 ### Workflow Flowchart
 ```mermaid
@@ -41,15 +41,15 @@ graph TD
 
 ---
 
-## ✨ Features
+## Features
 
-### 🎓 Student Portal
+### Student Portal
 - **Advanced Ballot UI**: Modern, intuitive interface for selecting candidates.
 - **Secure Voting**: End-to-end identity verification and session-based security.
 - **Independent Theming**: User-specific light/dark mode persistence.
 - **Transparency**: Live upcoming election notices and post-election result visualization.
 
-### 🛡️ Administrative Terminal
+### Administrative Terminal
 - **Election Lifecycle**: Complete control from scheduling to result publication.
 - **Granular Eligibility**: Filter voters by department, year, and specific academic criteria.
 - **Real-time Analytics**: Visualized voting trends and participation rates.
@@ -57,7 +57,7 @@ graph TD
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Framework**: React 18 (Vite)
@@ -74,7 +74,7 @@ graph TD
 
 ---
 
-## 📦 Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 - Node.js (v18+)
@@ -109,19 +109,19 @@ graph TD
 
 ---
 
-## 🔒 Security Practices
+## Security Practices
 - **Environment Protection**: All database credentials and API endpoints are managed via `.env` and shielded by `.gitignore`.
 - **Portal Isolation**: Independent theme and state management for Student and Admin portals.
 - **Data Integrity**: Cryptographic hashing metaphors in the UI represent actual backend integrity checks.
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 - [ ] Integration of Face-API.js for biometric verification.
 - [ ] Multi-region node deployment for high availability.
 - [ ] Automated SMS/Email voting notifications.
 
 ---
 
-## 📄 License
+## License
 Proprietary Governance Infrastructure - © 2026 VoteHub Systems.
