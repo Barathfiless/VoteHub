@@ -205,58 +205,92 @@ const VoteElection = () => {
 
   const handleFingerprintAuth = async () => {
     try {
-      // Check if WebAuthn is supported
       if (!window.PublicKeyCredential) {
         toast.error('Biometric authentication not supported on this device');
         return;
       }
 
-      // Check if platform authenticator is available (fingerprint/face recognition)
       const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
       if (!available) {
         toast.error('Biometric authentication not available. Please set up fingerprint/face recognition on your device.');
         return;
       }
 
-      // Start scanning
       setIsScanning(true);
 
-      // Generate a random challenge
       const challenge = new Uint8Array(32);
       crypto.getRandomValues(challenge);
 
-      // Request authentication using device's biometric
-      const assertion = await navigator.credentials.get({
-        publicKey: {
-          challenge: challenge,
-          timeout: 60000,
-          userVerification: 'required', // Requires biometric verification
-          rpId: window.location.hostname,
-          allowCredentials: [], // Allow any registered credential
-        },
-      } as any);
+      // Check if we have already registered a biometric credential for this user on this device
+      const storedCredId = localStorage.getItem(`votehub_biometric_${user?.id}`);
 
-      if (assertion) {
-        // Biometric authentication successful
-        setIsScanning(false);
-        setFingerprintAuthenticated(true);
-        setShowSecurityAuth(false);
-        toast.success('Fingerprint verified successfully! You can now proceed to vote.');
+      if (!storedCredId) {
+        // First-time use: Use 'create' to both verify identity via phone lock and register the device
+        const credential = await navigator.credentials.create({
+          publicKey: {
+            challenge,
+            rp: { name: "VoteHub", id: window.location.hostname },
+            user: {
+              id: new TextEncoder().encode(user?.id || 'anonymous'),
+              name: user?.name || 'Voter',
+              displayName: user?.name || 'Voter',
+            },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+            authenticatorSelection: {
+              authenticatorAttachment: "platform",
+              userVerification: "required",
+              residentKey: "required",
+              requireResidentKey: true,
+            },
+            timeout: 60000,
+          }
+        }) as any;
+
+        if (credential) {
+          // Store the credential ID as base64 for future 'get' requests
+          const idBase64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+          localStorage.setItem(`votehub_biometric_${user?.id}`, idBase64);
+
+          setIsScanning(false);
+          setFingerprintAuthenticated(true);
+          setShowSecurityAuth(false);
+          toast.success('Device biometric linked and verified! You can now proceed.');
+        }
+      } else {
+        // Subsequent use: Use 'get' with the stored credential ID
+        const credId = Uint8Array.from(atob(storedCredId), c => c.charCodeAt(0));
+
+        const assertion = await navigator.credentials.get({
+          publicKey: {
+            challenge,
+            timeout: 60000,
+            userVerification: 'required',
+            rpId: window.location.hostname,
+            allowCredentials: [{
+              id: credId,
+              type: 'public-key',
+              transports: ['internal'],
+            }],
+          },
+        }) as any;
+
+        if (assertion) {
+          setIsScanning(false);
+          setFingerprintAuthenticated(true);
+          setShowSecurityAuth(false);
+          toast.success('Fingerprint verified successfully!');
+        }
       }
     } catch (error: any) {
       setIsScanning(false);
       console.error('Biometric authentication error:', error);
 
       if (error.name === 'NotAllowedError') {
-        toast.error('Fingerprint scan was cancelled. Please try again.');
+        toast.error('Verification cancelled.');
       } else if (error.name === 'InvalidStateError') {
-        toast.error('Biometric authentication not configured on this device. Please set up fingerprint/face recognition in your device settings.');
-      } else if (error.name === 'NotSupportedError') {
-        toast.error('Biometric authentication not supported on this device');
-      } else if (error.name === 'TimeoutError') {
-        toast.error('Fingerprint scan timed out. Please try again.');
+        toast.error('This device is already being used or setup is incomplete.');
       } else {
-        toast.error('Fingerprint verification failed. Please try again or use password instead.');
+        toast.error('Verification failed. Please use your account password.');
       }
     }
   };
