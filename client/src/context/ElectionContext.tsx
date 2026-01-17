@@ -27,6 +27,7 @@ export interface Election {
   start_time: string;
   end_time: string;
   status: 'scheduled' | 'active' | 'completed';
+  resultsPublished?: boolean; // New field to control result visibility
   created_by: string;
   candidates: Candidate[];
   created_at: string;

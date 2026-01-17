@@ -42,6 +42,7 @@ const PostResults = () => {
 
     updateElection(selectedElection.id, {
       status: 'completed',
+      resultsPublished: true, // Explicitly publish results
     });
 
     setShowConfirmDialog(false);
@@ -209,7 +210,7 @@ const PostResults = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                {selectedElection.status !== 'completed' ? (
+                {!selectedElection.resultsPublished ? (
                   <>
                     <Button
                       onClick={handlePostResults}

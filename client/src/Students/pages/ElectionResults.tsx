@@ -18,6 +18,7 @@ const ElectionResults = () => {
   useEffect(() => {
     const completed = elections.filter(e =>
       e.status === 'completed' &&
+      e.resultsPublished === true && // Only show if explicitly published
       (e.department === 'All Departments' || e.department === user?.department)
     );
     setCompletedElections(completed);
