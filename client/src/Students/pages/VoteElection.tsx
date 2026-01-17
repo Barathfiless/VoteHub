@@ -4,10 +4,12 @@ import { useElections } from '@/context/ElectionContext';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import * as faceapi from 'face-api.js';
 
 import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle2, Camera, X, Laptop, Smartphone, Lock, Users, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Camera, X, Laptop, Smartphone, Lock, Users, AlertTriangle, Fingerprint, KeyRound } from 'lucide-react';
+import { loginStudent } from '@/integrations/mongo/authService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,11 +38,12 @@ const VoteElection = () => {
   const [deviceType, setDeviceType] = useState<'mobile' | 'laptop' | null>(null);
   const [showDeviceSelection, setShowDeviceSelection] = useState(false);
   const [showSecurityAuth, setShowSecurityAuth] = useState(false);
-  const [passcode, setPasscode] = useState('');
-  const [passcodeError, setPasscodeError] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [fingerprintSupported, setFingerprintSupported] = useState(false);
   const [fingerprintAuthenticated, setFingerprintAuthenticated] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
 
@@ -171,23 +174,33 @@ const VoteElection = () => {
     setShowDeviceSelection(false);
     setShowSecurityAuth(true);
   };
-  const handlePasscodeSubmit = () => {
-    if (!passcode) {
-      setPasscodeError('Please enter your passcode');
+  const handlePasswordSubmit = async () => {
+    if (!password) {
+      setPasswordError('Please enter your password');
       return;
     }
 
-    // Validate passcode against stored password (basic validation)
-    // In production, this should be more secure
-    const studentSession = JSON.parse(localStorage.getItem('studentSession') || '{}');
-    if (passcode.length < 6) {
-      setPasscodeError('Passcode must be at least 6 characters');
+    if (!user?.rollNo) {
+      toast.error('User session error. Please log in again.');
       return;
     }
 
-    setPasscodeError(null);
-    setShowSecurityAuth(false);
-    toast.success('Authentication successful!');
+    setIsVerifyingPassword(true);
+    try {
+      const student = await loginStudent(user.rollNo, password);
+      if (student) {
+        setPasswordError(null);
+        setShowSecurityAuth(false);
+        toast.success('Authentication successful!');
+      } else {
+        setPasswordError('Invalid password. Please try again.');
+      }
+    } catch (error) {
+      console.error('Password verification error:', error);
+      setPasswordError('Error verifying password');
+    } finally {
+      setIsVerifyingPassword(false);
+    }
   };
 
   const handleFingerprintAuth = async () => {
@@ -207,7 +220,6 @@ const VoteElection = () => {
 
       // Start scanning
       setIsScanning(true);
-      toast.loading('Place your finger on the sensor...');
 
       // Generate a random challenge
       const challenge = new Uint8Array(32);
@@ -244,7 +256,7 @@ const VoteElection = () => {
       } else if (error.name === 'TimeoutError') {
         toast.error('Fingerprint scan timed out. Please try again.');
       } else {
-        toast.error('Fingerprint verification failed. Please try again or use passcode instead.');
+        toast.error('Fingerprint verification failed. Please try again or use password instead.');
       }
     }
   };
@@ -509,69 +521,88 @@ const VoteElection = () => {
               {/* Step 2: Security Auth */}
               {showSecurityAuth && (
                 <>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Voting Setup (2/2)</h2>
-                  <div className="max-w-sm mx-auto">
-                    <Card>
-                      <CardHeader className="text-center pb-2">
-                        <div className="mx-auto w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2">
-                          <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Voting Setup (2/2)</h2>
+                  <div className="max-w-[360px] mx-auto w-full">
+                    <Card className="bg-[#030712] border border-gray-800 shadow-2xl rounded-2xl p-6">
+                      <div className="flex flex-col items-center mb-6">
+                        <div className="w-12 h-12 bg-blue-900/40 rounded-full flex items-center justify-center mb-4">
+                          <Lock className="w-6 h-6 text-blue-500" />
                         </div>
-                        <CardTitle className="text-lg">Security Verification</CardTitle>
-                        <CardDescription>Authenticate to continue</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4 p-4 pt-0">
+                        <h2 className="text-2xl font-bold text-white mb-1">Security Verification</h2>
+                        <p className="text-gray-400 text-sm">Authenticate to continue</p>
+                      </div>
+
+                      <div className="space-y-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Enter Passcode</label>
+                          <label className="text-sm font-bold text-white flex justify-start">Enter Password</label>
                           <input
                             type="password"
-                            value={passcode}
-                            onChange={(e) => setPasscode(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700"
-                            placeholder="Enter your 6-digit passcode"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full px-4 py-3 bg-[#111827] border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-gray-600"
+                            placeholder="Enter your account password"
+                            onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
                           />
-                          {passcodeError && <p className="text-sm text-red-500">{passcodeError}</p>}
+                          {passwordError && (
+                            <p className="text-xs text-red-500 font-medium mt-1">{passwordError}</p>
+                          )}
                         </div>
-                        <Button className="w-full" onClick={handlePasscodeSubmit}>
-                          Verify Passcode
+
+                        <Button
+                          className="w-full h-12 bg-[#b91c1c] hover:bg-[#991b1b] text-white rounded-xl font-bold text-base transition-colors"
+                          onClick={handlePasswordSubmit}
+                          disabled={isVerifyingPassword}
+                        >
+                          {isVerifyingPassword ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Verifying...
+                            </div>
+                          ) : 'Verify Password'}
                         </Button>
 
-                        {fingerprintSupported && (
+                        {deviceType === 'mobile' && (
                           <>
-                            <div className="relative">
-                              <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
-                              </div>
-                              <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-white dark:bg-gray-800 px-2 text-muted-foreground">Or continue with</span>
-                              </div>
+                            <div className="relative flex items-center py-2">
+                              <div className="flex-grow border-t border-gray-800"></div>
+                              <span className="flex-shrink mx-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[#030712] px-2">OR CONTINUE WITH</span>
+                              <div className="flex-grow border-t border-gray-800"></div>
                             </div>
+
                             <Button
                               variant="outline"
-                              className="w-full gap-2"
+                              className="w-full h-12 bg-transparent border border-gray-800 text-white rounded-xl flex items-center justify-center gap-2 hover:bg-gray-900 transition-all"
                               onClick={handleFingerprintAuth}
-                              disabled={isScanning}
+                              disabled={isScanning || !fingerprintSupported}
                             >
                               {isScanning ? (
-                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                               ) : (
-                                <CheckCircle2 className="w-4 h-4" />
+                                <div className="w-5 h-5 rounded-full border border-white flex items-center justify-center">
+                                  <CheckCircle2 className="w-3 h-3 text-white" />
+                                </div>
                               )}
-                              {isScanning ? 'Scanning...' : 'Biometric Auth'}
+                              <span className="font-bold">{isScanning ? 'Scanning...' : 'Biometric Auth'}</span>
                             </Button>
                           </>
                         )}
-                        <Button
-                          variant="ghost"
-                          className="w-full h-8 text-sm gap-2 text-muted-foreground hover:text-foreground mt-2"
-                          onClick={() => {
-                            setShowSecurityAuth(false);
-                            setShowDeviceSelection(true);
-                          }}
-                        >
-                          <ArrowLeft className="w-4 h-4" />
-                          Back
-                        </Button>
-                      </CardContent>
+
+                        <div className="pt-2">
+                          <Button
+                            variant="ghost"
+                            className="w-full text-gray-400 hover:text-white flex items-center justify-center gap-2"
+                            onClick={() => {
+                              setShowSecurityAuth(false);
+                              setShowDeviceSelection(true);
+                              setPassword('');
+                              setPasswordError(null);
+                            }}
+                          >
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                            Back to Device Selection
+                          </Button>
+                        </div>
+                      </div>
                     </Card>
                   </div>
                 </>
