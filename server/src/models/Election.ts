@@ -24,6 +24,7 @@ export interface IElection extends Document {
     status: 'scheduled' | 'active' | 'completed';
     created_by: string;
     candidates: ICandidate[];
+    resultsPublished: boolean;
     created_at: Date;
 }
 
@@ -47,6 +48,7 @@ const ElectionSchema: Schema = new Schema({
     start_time: { type: Date, required: true },
     end_time: { type: Date, required: true },
     status: { type: String, enum: ['scheduled', 'active', 'completed'], default: 'scheduled' },
+    resultsPublished: { type: Boolean, default: false },
     created_by: { type: String, required: true },
     candidates: [CandidateSchema],
     created_at: { type: Date, default: Date.now },
