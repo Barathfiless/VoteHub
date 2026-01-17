@@ -387,11 +387,26 @@ const VoteElection = () => {
 
   if (!election) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <p className="text-gray-600 mb-4">Election not found</p>
-            <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
+        <Card className="w-full max-w-md shadow-lg border-gray-200 dark:border-gray-800">
+          <CardContent className="pt-8 pb-8 text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-full">
+                <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Election Not Found</h2>
+              <p className="text-gray-500 dark:text-gray-400">The election details could not be loaded. Please try again.</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button onClick={() => window.location.reload()} className="w-full">
+                Try Again
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/dashboard')} className="w-full">
+                Return to Dashboard
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
