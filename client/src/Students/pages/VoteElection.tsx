@@ -204,6 +204,10 @@ const VoteElection = () => {
   };
 
   const handleFingerprintAuth = async () => {
+    // Ensure we have a valid user ID for storage key
+    const currentUserId = user?.id || user?.rollNo || 'anonymous';
+    const storageKey = `votehub_biometric_${currentUserId}`;
+
     try {
       if (!window.PublicKeyCredential) {
         toast.error('Biometric authentication not supported on this device');
@@ -221,76 +225,89 @@ const VoteElection = () => {
       const challenge = new Uint8Array(32);
       crypto.getRandomValues(challenge);
 
-      // Check if we have already registered a biometric credential for this user on this device
-      const storedCredId = localStorage.getItem(`votehub_biometric_${user?.id}`);
+      // Check if we have already registered a biometric credential 
+      const storedCredId = localStorage.getItem(storageKey);
 
-      if (!storedCredId) {
-        // First-time use: Use 'create' to both verify identity via phone lock and register the device
-        const credential = await navigator.credentials.create({
-          publicKey: {
-            challenge,
-            rp: { name: "VoteHub", id: window.location.hostname },
-            user: {
-              id: new TextEncoder().encode(user?.id || 'anonymous'),
-              name: user?.name || 'Voter',
-              displayName: user?.name || 'Voter',
+      if (storedCredId && storedCredId !== 'undefined' && storedCredId !== 'null') {
+        try {
+          const credId = Uint8Array.from(atob(storedCredId), c => c.charCodeAt(0));
+
+          const assertion = await navigator.credentials.get({
+            publicKey: {
+              challenge,
+              timeout: 60000,
+              userVerification: 'required',
+              rpId: window.location.hostname,
+              allowCredentials: [{
+                id: credId,
+                type: 'public-key',
+                transports: ['internal'],
+              }],
             },
-            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-            authenticatorSelection: {
-              authenticatorAttachment: "platform",
-              userVerification: "required",
-              residentKey: "required",
-              requireResidentKey: true,
-            },
-            timeout: 60000,
+          }) as any;
+
+          if (assertion) {
+            setIsScanning(false);
+            setFingerprintAuthenticated(true);
+            setShowSecurityAuth(false);
+            toast.success('Verified successfully!');
+            return;
           }
-        }) as any;
-
-        if (credential) {
-          // Store the credential ID as base64 for future 'get' requests
-          const idBase64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-          localStorage.setItem(`votehub_biometric_${user?.id}`, idBase64);
-
-          setIsScanning(false);
-          setFingerprintAuthenticated(true);
-          setShowSecurityAuth(false);
-          toast.success('Device biometric linked and verified! You can now proceed.');
+        } catch (getErr: any) {
+          console.warn('Biometric "get" failed, trying "create" as fallback:', getErr);
+          // If the stored credential is no longer valid or found on device, clear it
+          if (getErr.name === 'NotFoundError' || getErr.name === 'InvalidStateError') {
+            localStorage.removeItem(storageKey);
+          } else if (getErr.name === 'NotAllowedError') {
+            setIsScanning(false);
+            toast.error('Verification cancelled.');
+            return;
+          }
+          // Continue to "create" flow as fallback
         }
-      } else {
-        // Subsequent use: Use 'get' with the stored credential ID
-        const credId = Uint8Array.from(atob(storedCredId), c => c.charCodeAt(0));
+      }
 
-        const assertion = await navigator.credentials.get({
-          publicKey: {
-            challenge,
-            timeout: 60000,
-            userVerification: 'required',
-            rpId: window.location.hostname,
-            allowCredentials: [{
-              id: credId,
-              type: 'public-key',
-              transports: ['internal'],
-            }],
+      // "Create" flow (First time or fallback) - Prompts for Phone Lock
+      toast.info('Linking your device lock...', { duration: 2000 });
+
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge,
+          rp: { name: "VoteHub", id: window.location.hostname },
+          user: {
+            id: new TextEncoder().encode(currentUserId),
+            name: user?.name || 'Voter',
+            displayName: user?.name || 'Voter',
           },
-        }) as any;
-
-        if (assertion) {
-          setIsScanning(false);
-          setFingerprintAuthenticated(true);
-          setShowSecurityAuth(false);
-          toast.success('Fingerprint verified successfully!');
+          pubKeyCredParams: [
+            { alg: -7, type: "public-key" }, // ES256
+            { alg: -257, type: "public-key" } // RS256
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform",
+            userVerification: "required",
+          },
+          timeout: 60000,
         }
+      }) as any;
+
+      if (credential) {
+        const idBase64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+        localStorage.setItem(storageKey, idBase64);
+
+        setIsScanning(false);
+        setFingerprintAuthenticated(true);
+        setShowSecurityAuth(false);
+        toast.success('Phone lock verified and linked!');
       }
     } catch (error: any) {
       setIsScanning(false);
       console.error('Biometric authentication error:', error);
 
       if (error.name === 'NotAllowedError') {
-        toast.error('Verification cancelled.');
-      } else if (error.name === 'InvalidStateError') {
-        toast.error('This device is already being used or setup is incomplete.');
+        toast.error('Action cancelled.');
       } else {
-        toast.error('Verification failed. Please use your account password.');
+        toast.error('Device lock verification failed. Please use your password.');
       }
     }
   };
