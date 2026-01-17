@@ -53,7 +53,7 @@ const StudentManagement = () => {
 
     const fetchStudents = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/student`);
+            const res = await fetch(`${API_BASE_URL}/auth/student`);
             if (res.ok) {
                 const data = await res.json();
                 setStudents(data);
