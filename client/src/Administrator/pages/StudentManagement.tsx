@@ -8,9 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
-
-// API Helpers
-const API_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '@/config/apiConfig';
 
 interface Department {
     id: string;
@@ -42,7 +40,7 @@ const StudentManagement = () => {
 
     const fetchDepartments = async () => {
         try {
-            const res = await fetch(`${API_URL}/departments`);
+            const res = await fetch(`${API_BASE_URL}/departments`);
             if (res.ok) {
                 const data = await res.json();
                 setDepartments(data);
@@ -55,7 +53,7 @@ const StudentManagement = () => {
 
     const fetchStudents = async () => {
         try {
-            const res = await fetch(`${API_URL}/auth/student`);
+            const res = await fetch(`${API_BASE_URL}/student`);
             if (res.ok) {
                 const data = await res.json();
                 setStudents(data);
@@ -75,7 +73,7 @@ const StudentManagement = () => {
         setIsLoading(true);
         try {
             // Using existing register endpoint
-            const res = await fetch(`${API_URL}/auth/student/register`, {
+            const res = await fetch(`${API_BASE_URL}/auth/student/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -106,7 +104,7 @@ const StudentManagement = () => {
         if (!confirm('Are you sure you want to delete this student?')) return;
 
         try {
-            const res = await fetch(`${API_URL}/auth/student/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/auth/student/${id}`, {
                 method: 'DELETE'
             });
 

@@ -8,8 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
-
-const API_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '@/config/apiConfig';
 
 interface Department {
     id: string;
@@ -39,7 +38,7 @@ const DepartmentManagement = () => {
 
     const fetchDepartments = async () => {
         try {
-            const res = await fetch(`${API_URL}/departments`);
+            const res = await fetch(`${API_BASE_URL}/departments`);
             if (res.ok) {
                 const data = await res.json();
                 setDepartments(data);
@@ -58,7 +57,7 @@ const DepartmentManagement = () => {
 
         setIsLoading(true);
         try {
-            const res = await fetch(`${API_URL}/departments`, {
+            const res = await fetch(`${API_BASE_URL}/departments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newDeptName })
@@ -86,7 +85,7 @@ const DepartmentManagement = () => {
 
         setIsLoading(true);
         try {
-            const res = await fetch(`${API_URL}/departments/${editingDept.id || (editingDept as any)._id}`, {
+            const res = await fetch(`${API_BASE_URL}/departments/${editingDept.id || (editingDept as any)._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: editDeptName })
@@ -113,7 +112,7 @@ const DepartmentManagement = () => {
         if (!deletingDeptId) return;
 
         try {
-            const res = await fetch(`${API_URL}/departments/${deletingDeptId}`, {
+            const res = await fetch(`${API_BASE_URL}/departments/${deletingDeptId}`, {
                 method: 'DELETE'
             });
 
